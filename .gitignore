@@ -1,0 +1,11 @@
+__pycache__
+app/__pycache__
+app/api/__pycache__
+app/api/v1/__pycache__
+app/libs/__pycache__
+app/celery_task/__pycache__
+dist
+build
+server.spec
+.idea
+
