@@ -1,0 +1,16 @@
+FROM python:3.6.12
+#FROM python:alpine
+LABEL maintainer="kai.cao"
+
+ENV PIP_INDEX_URL=https://pypi.doubanio.com/simple
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --upgrade pip
+
+RUN mkdir /app
+WORKDIR /app
+COPY requirements_celery.txt /app/
+RUN pip install -r requirements_celery.txt
+COPY . /app/
+
+ENTRYPOINT ["python", "celery_run.py"]

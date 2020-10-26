@@ -1,0 +1,81 @@
+version: "3"
+services:
+  snn:
+#    build: ../..
+    image: snn-demo:0.0.18
+    ports:
+      - "5001:5002"
+    restart: always
+    depends_on:
+      - celery
+    environment:
+      - APP_SETTINGS=app.config.DevelopmentConfig
+      - CELERY_NAME=celery
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERYD_PREFETCH_MULTIPLIER=1
+      - CELERYD_CONCURRENCY=1
+      - DETECT_API_URL=http://detect_service:9090/api/v1/detect/ct-detect-save
+      - CASE_DATA=/data
+      - RESULT_DATA=/results
+      - TASK_TIMEOUT=1800
+    volumes:
+    - ~/snn/DataLuna:/data
+    - ~/snn/DataLuna/results:/results
+    logging:
+      options:
+        max-file: '5'
+        max-size: 50m
+    healthcheck:
+      timeout: 30s
+
+  celery:
+#    build:
+#      context: ../..
+#      dockerfile: Dockerfile_celery
+    image: snn-demo:0.0.18
+    entrypoint: python celery_run.py
+    depends_on:
+      - redis
+    environment:
+      - CELERY_NAME=celery
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CELERYD_PREFETCH_MULTIPLIER=1
+      - CELERYD_CONCURRENCY=1
+      - DETECT_API_URL=http://detect_service:9090/api/v1/detect/ct-detect-save
+      - TASK_TIMEOUT=3600
+    logging:
+      options:
+        max-file: '5'
+        max-size: 50m
+
+  detect_service:
+    image: registry.aliyuncs.com/xiaojinchuan/lif-detector-service:0.0.2
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - USE_GPU=1
+      - MODEL_NAME=convlifssd
+      - MODEL_PTH_FILE=291_0.0592.ckpt
+      - API_CALLBACK_HOST=http://snn:5002
+      - DATA_ROOT=/data
+      - MODEL_DIR=/models
+      - DETECT_RESULTS_DIR=/results
+    volumes:
+      - ~/snn/models:/models
+      - ~/snn/DataLuna:/data
+      - ~/snn/DataLuna/results:/results
+    logging:
+      options:
+        max-file: '5'
+        max-size: 50m
+    healthcheck:
+      timeout: 30s
+
+  redis:
+    image: redis:alpine
+
+
+
+
